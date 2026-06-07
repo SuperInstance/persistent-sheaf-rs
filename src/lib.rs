@@ -59,6 +59,7 @@ mod pushforward;
 mod sheaf;
 mod sheaf_laplacian;
 mod simplicial;
+mod spatial_analysis;
 
 pub use filtration::Filtration;
 pub use laplacian::SheafLaplacian;
@@ -67,3 +68,7 @@ pub use pushforward::{PushforwardSheaf, SimplicialMap};
 pub use sheaf::CellularSheaf;
 pub use sheaf_laplacian::{HodgeLaplacian, harmonic_0_sections, harmonic_1_sections};
 pub use simplicial::SimplicialComplex;
+pub use spatial_analysis::{
+    analyze_connectivity, connected_components, find_isolated_rooms, room_distance,
+    room_graph_laplacian, PersistenceReport, RoomTopologySheaf,
+};

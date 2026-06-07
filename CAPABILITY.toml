@@ -1,0 +1,113 @@
+[crate]
+name = "persistent-sheaf-rs"
+version = "0.1.0"
+layer = "topology"
+description = "Topological data analysis via persistent sheaf cohomology — persistent homology with sheaf theory for multi-modal data fusion"
+
+[provides]
+capabilities = [
+  { name = "simplicial_complex", type = "struct", description = "Simplicial complex with Vietoris-Rips construction from point clouds, Betti numbers" },
+  { name = "filtration", type = "struct", description = "Nested sequence of simplicial complexes indexed by scale with persistence computation" },
+  { name = "persistence_diagram", type = "struct", description = "Tracks topological feature birth/death across filtration with bottleneck distance" },
+  { name = "cellular_sheaf", type = "struct", description = "Assigns stalks to cells with linear restriction maps for multi-modal data fusion" },
+  { name = "sheaf_laplacian", type = "struct", description = "Generalizes graph Laplacian encoding geometric and non-geometric information" },
+  { name = "hodge_laplacian", type = "struct", description = "Hodge Laplacian with harmonic section computation" },
+  { name = "pushforward", type = "module", description = "Pushforward sheaves and simplicial maps between complexes" },
+  { name = "bottleneck_distance", type = "struct", description = "Distance metric between persistence diagrams" }
+]
+exports = [
+  "simplicial::SimplicialComplex",
+  "filtration::Filtration",
+  "persistence::PersistenceDiagram",
+  "persistence::PersistencePair",
+  "persistence::BottleneckDistance",
+  "sheaf::CellularSheaf",
+  "laplacian::SheafLaplacian",
+  "sheaf_laplacian::HodgeLaplacian",
+  "sheaf_laplacian::harmonic_0_sections",
+  "sheaf_laplacian::harmonic_1_sections",
+  "pushforward::PushforwardSheaf",
+  "pushforward::SimplicialMap"
+]
+
+[requires]
+optional = [
+  { crate = "room-topology-rs", reason = "Room-scale spatial complexes for sheaf assignment", import = "topology::RoomComplex" },
+  { crate = "wasserstein-agents-rs", reason = "Wasserstein distances between persistence diagrams of agent distributions", import = "barycenter::dist_w2" }
+]
+
+[integrates.room_topology]
+crate = "room-topology-rs"
+module = "simplicial"
+description = "Build simplicial complexes from room-scale spatial data, assign sheaves to spatial cells"
+human_steps = [
+  "1. cargo add room-topology-rs",
+  "2. Build RoomComplex from spatial layout",
+  "3. Construct SimplicialComplex via Vietoris-Rips on room points",
+  "4. Assign CellularSheaf stalks to room cells"
+]
+agent_steps = [
+  "Obtain room topology as point cloud",
+  "Build Vietoris-Rips complex with appropriate epsilon",
+  "Assign stalks to cells based on sensor/modal data",
+  "Compute SheafLaplacian for topological analysis"
+]
+
+[integrates.wasserstein_agents]
+crate = "wasserstein-agents-rs"
+module = "filtration"
+description = "Wasserstein distances between persistence diagrams: compare topological signatures of agent distributions"
+human_steps = [
+  "1. cargo add wasserstein-agents",
+  "2. Compute persistence diagrams for agent distributions",
+  "3. Use BottleneckDistance or dist_w2 to compare"
+]
+agent_steps = [
+  "Compute PersistenceDiagram for each agent distribution",
+  "Use BottleneckDistance to measure topological dissimilarity",
+  "Cluster agents by topological signature similarity",
+  "Track topological changes over time via diagram comparison"
+]
+
+[onboarding.human]
+quick_start = "cargo add persistent-sheaf"
+example = """
+use persistent_sheaf::{
+    SimplicialComplex, Filtration, PersistenceDiagram,
+    CellularSheaf, SheafLaplacian,
+};
+
+let points = vec![
+    vec![0.0, 0.0],
+    vec![1.0, 0.0],
+    vec![0.5, 0.866],
+];
+
+let h0 = SimplicialComplex::h0_betti(&points, 0.5);
+let complex = SimplicialComplex::vietoris_rips(&points, 1.0);
+let sheaf = CellularSheaf::constant(complex, 2);
+let lap = SheafLaplacian::from_sheaf(&sheaf);
+let eigenvalues = lap.eigenvalues();
+
+let filt = Filtration::from_point_cloud(&points, 20);
+let diagram = filt.compute_persistence();
+let tp = diagram.total_persistence(1.0);
+"""
+
+[onboarding.agent]
+context_needed = ["point_cloud_data", "dimension", "filtration_scale", "stalk_dimension", "epsilon_threshold"]
+api_surface = [
+  "SimplicialComplex::vietoris_rips(points, epsilon)",
+  "SimplicialComplex::h0_betti(points, threshold)",
+  "Filtration::from_point_cloud(points, max_scale)",
+  "Filtration::compute_persistence() -> PersistenceDiagram",
+  "PersistenceDiagram::total_persistence(p)",
+  "BottleneckDistance::compute(diagram_a, diagram_b)",
+  "CellularSheaf::constant(complex, stalk_dim)",
+  "SheafLaplacian::from_sheaf(sheaf)",
+  "SheafLaplacian::eigenvalues()",
+  "HodgeLaplacian::new(sheaf)",
+  "harmonic_0_sections(laplacian)",
+  "harmonic_1_sections(laplacian)"
+]
+integration_pattern = "Build simplicial complex from point cloud, construct filtration for persistence, compute persistence diagram for topological features. Assign sheaves for multi-modal data, compute sheaf Laplacian for spectral analysis. Use pushforward for mapping between complexes."
